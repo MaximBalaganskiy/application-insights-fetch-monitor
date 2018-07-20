@@ -5,7 +5,7 @@ The monitor is based on official [Ajax Monitor](https://github.com/Microsoft/App
 ## Installation
 
 ```
-npm i --save-dev applicationinsights-js @types/applicationinsights-js application-insights-fetch-monitor
+npm i --save applicationinsights-js @types/applicationinsights-js application-insights-fetch-monitor
 ```
 ## Usage
 
