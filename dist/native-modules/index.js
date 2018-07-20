@@ -122,7 +122,7 @@ var FetchMonitor = /** @class */ (function () {
                 });
             }
             else {
-                var dependency = new Microsoft.ApplicationInsights.Telemetry.RemoteDependencyData(ajaxData.id, ajaxData.getAbsoluteUrl(), ajaxData.getPathName(), ajaxData.ajaxTotalDuration, (+(ajaxData.status)) >= 200 && (+(ajaxData.status)) < 400, +response.status, ajaxData.method);
+                var dependency = new Microsoft.ApplicationInsights.Telemetry.RemoteDependencyData(ajaxData.id, ajaxData.getAbsoluteUrl(), ajaxData.getPathName(), ajaxData.ajaxTotalDuration, response.status >= 200 && response.status < 400, response.status, ajaxData.method);
                 // enrich dependency target with correlation context from the server
                 var correlationContext = this.getCorrelationContext(response);
                 if (correlationContext) {
