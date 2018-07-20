@@ -5,13 +5,13 @@ The monitor is based on official [Ajax Monitor](https://github.com/Microsoft/App
 ## Installation
 
 ```
-npm i --save-dev applicationinsights-js application-insights-fetch-monitor
+npm i --save-dev applicationinsights-js @types/applicationinsights-js application-insights-fetch-monitor
 ```
 ## Usage
 
 ```js
 import { initAppInsightsFetchMonitor } from "application-insights-fetch-monitor";
 
-appInsights.downloadAndSetup({ instrumentationKey: this.settings.appInsightsInstrumentationKey });
+appInsights.downloadAndSetup({ instrumentationKey: "[YOUR INSTRUMENTATION KEY]" });
 initAppInsightsFetchMonitor();
 ```
