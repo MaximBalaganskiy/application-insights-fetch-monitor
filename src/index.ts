@@ -108,8 +108,8 @@ class FetchMonitor {
 					ajaxData.getAbsoluteUrl(),
 					ajaxData.getPathName(),
 					ajaxData.ajaxTotalDuration,
-					(+(ajaxData.status)) >= 200 && (+(ajaxData.status)) < 400,
-					+response.status,
+					response.status >= 200 && response.status < 400,
+					response.status,
 					ajaxData.method);
 
 				// enrich dependency target with correlation context from the server
