@@ -57,6 +57,7 @@ declare namespace Microsoft.ApplicationInsights {
 
 	class CorrelationIdHelper {
 		static getCorrelationContext(responseHeader: string): string;
+		static canIncludeCorrelationHeader(config: IConfig, requestUrl: string, currentHost: string);
 	}
 
 	interface IAppInsights {
