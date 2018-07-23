@@ -1,3 +1,4 @@
+/// <reference types="applicationinsights-js" />
 declare namespace Microsoft.ApplicationInsights {
     interface ITelemetryContext {
         appId(): string;
@@ -44,6 +45,7 @@ declare namespace Microsoft.ApplicationInsights {
     }
     class CorrelationIdHelper {
         static getCorrelationContext(responseHeader: string): string;
+        static canIncludeCorrelationHeader(config: IConfig, requestUrl: string, currentHost: string): any;
     }
     interface IAppInsights {
         trackDependencyData(dependency: Telemetry.RemoteDependencyData): any;

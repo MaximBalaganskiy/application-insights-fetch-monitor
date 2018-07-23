@@ -64,23 +64,8 @@ var FetchMonitor = /** @class */ (function () {
             var id = "|" + fetchMonitorInstance.appInsights.context.operation.id + "." + Microsoft.ApplicationInsights.Util.newId();
             var ajaxData;
             try {
-                ajaxData = new Microsoft.ApplicationInsights.ajaxRecord(id);
-                ajaxData.requestSentTime = Microsoft.ApplicationInsights.dateTime.Now();
-                if (typeof (input) === "string") {
-                    ajaxData.requestUrl = input;
-                }
-                else {
-                    ajaxData.requestUrl = input.url;
-                }
-                if (init && init.method) {
-                    ajaxData.method = init.method;
-                }
-                else if (typeof (input) !== "string") {
-                    ajaxData.method = input.method;
-                }
-                else {
-                    ajaxData.method = "GET";
-                }
+                ajaxData = fetchMonitorInstance.createAjaxRecord(input, init);
+                init = fetchMonitorInstance.includeCorrelationHeaders(ajaxData, init);
             }
             catch (e) {
                 Microsoft.ApplicationInsights._InternalLogging.throwInternal(Microsoft.ApplicationInsights.LoggingSeverity.CRITICAL, Microsoft.ApplicationInsights._InternalMessageId.FailedMonitorAjaxOpen, "Failed to monitor Window.fetch, monitoring data for this fetch call may be incorrect.", {
@@ -88,11 +73,52 @@ var FetchMonitor = /** @class */ (function () {
                     exception: Microsoft.ApplicationInsights.Util.dump(e)
                 });
             }
-            return originalFetch(input, init).then(function (response) {
+            return originalFetch(input, init)
+                .then(function (response) {
                 fetchMonitorInstance.onFetchComplete(response, ajaxData);
                 return response;
+            })
+                .catch(function (reason) {
+                fetchMonitorInstance.onFetchFailed(input, ajaxData);
+                throw reason;
             });
         };
+    };
+    FetchMonitor.prototype.createAjaxRecord = function (input, init) {
+        // this format corresponds with activity logic on server-side and is required for the correct correlation
+        var id = "|" + this.appInsights.context.operation.id + "." + Microsoft.ApplicationInsights.Util.newId();
+        var ajaxData = new Microsoft.ApplicationInsights.ajaxRecord(id);
+        ajaxData.requestSentTime = Microsoft.ApplicationInsights.dateTime.Now();
+        if (typeof (input) === "string") {
+            ajaxData.requestUrl = input;
+        }
+        else {
+            ajaxData.requestUrl = input ? input.url : "";
+        }
+        if (init && init.method) {
+            ajaxData.method = init.method;
+        }
+        else if (input && typeof (input) !== "string") {
+            ajaxData.method = input.method;
+        }
+        else {
+            ajaxData.method = "GET";
+        }
+        return ajaxData;
+    };
+    FetchMonitor.prototype.includeCorrelationHeaders = function (ajaxData, init) {
+        if (Microsoft.ApplicationInsights.CorrelationIdHelper.canIncludeCorrelationHeader(this.appInsights.config, ajaxData.getAbsoluteUrl(), this.currentWindowHost)) {
+            if (!init) {
+                init = {};
+            }
+            init.headers = new Headers(init.headers ? init.headers : {});
+            init.headers.set(Microsoft.ApplicationInsights.RequestHeaders.requestIdHeader, ajaxData.id);
+            var appId = this.appInsights.context ? this.appInsights.context.appId() : null;
+            if (appId) {
+                init.headers.set(Microsoft.ApplicationInsights.RequestHeaders.requestContextHeader, Microsoft.ApplicationInsights.RequestHeaders.requestContextAppIdFormat + appId);
+            }
+        }
+        return init;
     };
     FetchMonitor.getFailedFetchDiagnosticsMessage = function (input) {
         var result = "";
@@ -134,6 +160,29 @@ var FetchMonitor = /** @class */ (function () {
         catch (e) {
             Microsoft.ApplicationInsights._InternalLogging.throwInternal(Microsoft.ApplicationInsights.LoggingSeverity.WARNING, Microsoft.ApplicationInsights._InternalMessageId.FailedMonitorAjaxGetCorrelationHeader, "Failed to calculate the duration of the fetch call, monitoring data for this fetch call won't be sent.", {
                 fetchDiagnosticsMessage: FetchMonitor.getFailedFetchDiagnosticsMessage(response),
+                exception: Microsoft.ApplicationInsights.Util.dump(e)
+            });
+        }
+    };
+    FetchMonitor.prototype.onFetchFailed = function (input, ajaxData) {
+        try {
+            ajaxData.responseFinishedTime = Microsoft.ApplicationInsights.dateTime.Now();
+            ajaxData.CalculateMetrics();
+            if (ajaxData.ajaxTotalDuration < 0) {
+                Microsoft.ApplicationInsights._InternalLogging.throwInternal(Microsoft.ApplicationInsights.LoggingSeverity.WARNING, Microsoft.ApplicationInsights._InternalMessageId.FailedMonitorAjaxDur, "Failed to calculate the duration of the failed fetch call, monitoring data for this fetch call won't be sent.", {
+                    fetchDiagnosticsMessage: FetchMonitor.getFailedFetchDiagnosticsMessage(input),
+                    requestSentTime: ajaxData.requestSentTime,
+                    responseFinishedTime: ajaxData.responseFinishedTime
+                });
+            }
+            else {
+                var dependency = new Microsoft.ApplicationInsights.Telemetry.RemoteDependencyData(ajaxData.id, ajaxData.getAbsoluteUrl(), ajaxData.getPathName(), ajaxData.ajaxTotalDuration, false, 0, ajaxData.method);
+                this.appInsights.trackDependencyData(dependency);
+            }
+        }
+        catch (e) {
+            Microsoft.ApplicationInsights._InternalLogging.throwInternal(Microsoft.ApplicationInsights.LoggingSeverity.WARNING, Microsoft.ApplicationInsights._InternalMessageId.FailedMonitorAjaxGetCorrelationHeader, "Failed to calculate the duration of the failed fetch call, monitoring data for this fetch call won't be sent.", {
+                fetchDiagnosticsMessage: FetchMonitor.getFailedFetchDiagnosticsMessage(input),
                 exception: Microsoft.ApplicationInsights.Util.dump(e)
             });
         }
