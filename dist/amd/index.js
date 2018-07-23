@@ -67,7 +67,7 @@ define(["require", "exports", "./app-insights-sdk"], function (require, exports)
                 var ajaxData;
                 try {
                     ajaxData = fetchMonitorInstance.createAjaxRecord(input, init);
-                    init = fetchMonitorInstance.includeCorrelationHeaders(ajaxData, init);
+                    init = fetchMonitorInstance.includeCorrelationHeaders(ajaxData, input, init);
                 }
                 catch (e) {
                     Microsoft.ApplicationInsights._InternalLogging.throwInternal(Microsoft.ApplicationInsights.LoggingSeverity.CRITICAL, Microsoft.ApplicationInsights._InternalMessageId.FailedMonitorAjaxOpen, "Failed to monitor Window.fetch, monitoring data for this fetch call may be incorrect.", {
@@ -91,11 +91,11 @@ define(["require", "exports", "./app-insights-sdk"], function (require, exports)
             var id = "|" + this.appInsights.context.operation.id + "." + Microsoft.ApplicationInsights.Util.newId();
             var ajaxData = new Microsoft.ApplicationInsights.ajaxRecord(id);
             ajaxData.requestSentTime = Microsoft.ApplicationInsights.dateTime.Now();
-            if (typeof (input) === "string") {
-                ajaxData.requestUrl = input;
+            if (input instanceof Request) {
+                ajaxData.requestUrl = input ? input.url : "";
             }
             else {
-                ajaxData.requestUrl = input ? input.url : "";
+                ajaxData.requestUrl = input;
             }
             if (init && init.method) {
                 ajaxData.method = init.method;
@@ -108,12 +108,15 @@ define(["require", "exports", "./app-insights-sdk"], function (require, exports)
             }
             return ajaxData;
         };
-        FetchMonitor.prototype.includeCorrelationHeaders = function (ajaxData, init) {
+        FetchMonitor.prototype.includeCorrelationHeaders = function (ajaxData, input, init) {
             if (Microsoft.ApplicationInsights.CorrelationIdHelper.canIncludeCorrelationHeader(this.appInsights.config, ajaxData.getAbsoluteUrl(), this.currentWindowHost)) {
                 if (!init) {
                     init = {};
                 }
-                init.headers = new Headers(init.headers ? init.headers : {});
+                // init headers override original request headers
+                // so, if they exist use only them, otherwise use request's because they should have been applied in the first place
+                // not using original request headers will result in them being lost
+                init.headers = new Headers(init.headers || (input instanceof Request ? (input.headers || {}) : {}));
                 init.headers.set(Microsoft.ApplicationInsights.RequestHeaders.requestIdHeader, ajaxData.id);
                 var appId = this.appInsights.context ? this.appInsights.context.appId() : null;
                 if (appId) {
