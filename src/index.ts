@@ -41,7 +41,7 @@ class FetchMonitor {
 			let ajaxData: Microsoft.ApplicationInsights.ajaxRecord;
 			try {
 				ajaxData = fetchMonitorInstance.createAjaxRecord(input, init);
-				init = fetchMonitorInstance.includeCorrelationHeaders(ajaxData, init);
+				init = fetchMonitorInstance.includeCorrelationHeaders(ajaxData, input, init);
 			} catch (e) {
 				Microsoft.ApplicationInsights._InternalLogging.throwInternal(
 					Microsoft.ApplicationInsights.LoggingSeverity.CRITICAL,
@@ -69,10 +69,10 @@ class FetchMonitor {
 		let id: string = `|${this.appInsights.context.operation.id}.${Microsoft.ApplicationInsights.Util.newId()}`;
 		let ajaxData: Microsoft.ApplicationInsights.ajaxRecord = new Microsoft.ApplicationInsights.ajaxRecord(id);
 		ajaxData.requestSentTime = Microsoft.ApplicationInsights.dateTime.Now();
-		if (typeof (input) === "string") {
-			ajaxData.requestUrl = input;
-		} else {
+		if (input instanceof Request) {
 			ajaxData.requestUrl = input ? input.url : "";
+		} else {
+			ajaxData.requestUrl = input;
 		}
 		if (init && init.method) {
 			ajaxData.method = init.method;
@@ -84,12 +84,15 @@ class FetchMonitor {
 		return ajaxData;
 	}
 
-	private includeCorrelationHeaders(ajaxData: Microsoft.ApplicationInsights.ajaxRecord, init: RequestInit) {
+	private includeCorrelationHeaders(ajaxData: Microsoft.ApplicationInsights.ajaxRecord, input?: Request | string, init?: RequestInit) {
 		if (Microsoft.ApplicationInsights.CorrelationIdHelper.canIncludeCorrelationHeader(this.appInsights.config, ajaxData.getAbsoluteUrl(), this.currentWindowHost)) {
 			if (!init) {
 				init = {};
 			}
-			init.headers = new Headers(init.headers ? init.headers : {});
+			// init headers override original request headers
+			// so, if they exist use only them, otherwise use request's because they should have been applied in the first place
+			// not using original request headers will result in them being lost
+			init.headers = new Headers(init.headers || (input instanceof Request ? (input.headers || {}) : {}));
 			init.headers.set(Microsoft.ApplicationInsights.RequestHeaders.requestIdHeader, ajaxData.id);
 			let appId: string = this.appInsights.context ? this.appInsights.context.appId() : null;
 			if (appId) {
