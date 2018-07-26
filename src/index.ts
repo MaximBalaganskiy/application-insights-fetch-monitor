@@ -57,7 +57,7 @@ class FetchMonitor {
 					return response;
 				})
 				.catch(reason => {
-					fetchMonitorInstance.onFetchFailed(input, ajaxData);
+					fetchMonitorInstance.onFetchFailed(input, ajaxData, reason);
 					throw reason;
 				});
 		};
@@ -162,7 +162,7 @@ class FetchMonitor {
 		}
 	}
 
-	private onFetchFailed(input: Request | string, ajaxData: Microsoft.ApplicationInsights.ajaxRecord): void {
+	private onFetchFailed(input: Request | string, ajaxData: Microsoft.ApplicationInsights.ajaxRecord, reason: any): void {
 		try {
 			ajaxData.responseFinishedTime = Microsoft.ApplicationInsights.dateTime.Now();
 			ajaxData.CalculateMetrics();
@@ -186,7 +186,7 @@ class FetchMonitor {
 					false,
 					0,
 					ajaxData.method);
-
+				dependency.properties = { error: reason.message };
 				this.appInsights.trackDependencyData(dependency);
 			}
 		} catch (e) {
