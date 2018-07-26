@@ -61,7 +61,6 @@ var FetchMonitor = /** @class */ (function () {
         var fetchMonitorInstance = this;
         window.fetch = function fetch(input, init) {
             // this format corresponds with activity logic on server-side and is required for the correct correlation
-            var id = "|" + fetchMonitorInstance.appInsights.context.operation.id + "." + Microsoft.ApplicationInsights.Util.newId();
             var ajaxData;
             try {
                 ajaxData = fetchMonitorInstance.createAjaxRecord(input, init);
@@ -79,7 +78,7 @@ var FetchMonitor = /** @class */ (function () {
                 return response;
             })
                 .catch(function (reason) {
-                fetchMonitorInstance.onFetchFailed(input, ajaxData);
+                fetchMonitorInstance.onFetchFailed(input, ajaxData, reason);
                 throw reason;
             });
         };
@@ -167,7 +166,7 @@ var FetchMonitor = /** @class */ (function () {
             });
         }
     };
-    FetchMonitor.prototype.onFetchFailed = function (input, ajaxData) {
+    FetchMonitor.prototype.onFetchFailed = function (input, ajaxData, reason) {
         try {
             ajaxData.responseFinishedTime = Microsoft.ApplicationInsights.dateTime.Now();
             ajaxData.CalculateMetrics();
@@ -180,6 +179,7 @@ var FetchMonitor = /** @class */ (function () {
             }
             else {
                 var dependency = new Microsoft.ApplicationInsights.Telemetry.RemoteDependencyData(ajaxData.id, ajaxData.getAbsoluteUrl(), ajaxData.getPathName(), ajaxData.ajaxTotalDuration, false, 0, ajaxData.method);
+                dependency.properties = { error: reason.message };
                 this.appInsights.trackDependencyData(dependency);
             }
         }

@@ -90,7 +90,6 @@ System.register(["./app-insights-sdk"], function (exports_1, context_1) {
                     var fetchMonitorInstance = this;
                     window.fetch = function fetch(input, init) {
                         // this format corresponds with activity logic on server-side and is required for the correct correlation
-                        var id = "|" + fetchMonitorInstance.appInsights.context.operation.id + "." + Microsoft.ApplicationInsights.Util.newId();
                         var ajaxData;
                         try {
                             ajaxData = fetchMonitorInstance.createAjaxRecord(input, init);
@@ -108,7 +107,7 @@ System.register(["./app-insights-sdk"], function (exports_1, context_1) {
                             return response;
                         })
                             .catch(function (reason) {
-                            fetchMonitorInstance.onFetchFailed(input, ajaxData);
+                            fetchMonitorInstance.onFetchFailed(input, ajaxData, reason);
                             throw reason;
                         });
                     };
@@ -196,7 +195,7 @@ System.register(["./app-insights-sdk"], function (exports_1, context_1) {
                         });
                     }
                 };
-                FetchMonitor.prototype.onFetchFailed = function (input, ajaxData) {
+                FetchMonitor.prototype.onFetchFailed = function (input, ajaxData, reason) {
                     try {
                         ajaxData.responseFinishedTime = Microsoft.ApplicationInsights.dateTime.Now();
                         ajaxData.CalculateMetrics();
@@ -209,6 +208,7 @@ System.register(["./app-insights-sdk"], function (exports_1, context_1) {
                         }
                         else {
                             var dependency = new Microsoft.ApplicationInsights.Telemetry.RemoteDependencyData(ajaxData.id, ajaxData.getAbsoluteUrl(), ajaxData.getPathName(), ajaxData.ajaxTotalDuration, false, 0, ajaxData.method);
+                            dependency.properties = { error: reason.message };
                             this.appInsights.trackDependencyData(dependency);
                         }
                     }
