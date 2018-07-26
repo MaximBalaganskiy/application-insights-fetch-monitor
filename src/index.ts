@@ -37,7 +37,6 @@ class FetchMonitor {
 		let fetchMonitorInstance: FetchMonitor = this;
 		window.fetch = function fetch(input?: Request | string, init?: RequestInit): Promise<Response> {
 			// this format corresponds with activity logic on server-side and is required for the correct correlation
-			let id: string = `|${fetchMonitorInstance.appInsights.context.operation.id}.${Microsoft.ApplicationInsights.Util.newId()}`;
 			let ajaxData: Microsoft.ApplicationInsights.ajaxRecord;
 			try {
 				ajaxData = fetchMonitorInstance.createAjaxRecord(input, init);
