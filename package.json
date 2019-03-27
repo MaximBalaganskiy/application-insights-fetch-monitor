@@ -10,7 +10,7 @@
     "pretest": "npm run lint",
     "build:amd": "tsc --outDir dist/amd --module amd",
     "build:commonjs": "tsc --outDir dist/commonjs --module commonjs",
-    "build:es2015": "tsc --outDir dist/es2015 --module es2015",
+    "build:es2015": "tsc --outDir dist/es2015 --module es2015 --target es2015",
     "build:native-modules": "tsc --outDir dist/native-modules --module es2015",
     "build:system": "tsc --outDir dist/system --module system",
     "prebuild": "rimraf dist",
@@ -37,11 +37,11 @@
     "applicationinsights-js": "^1.0.18"
   },
   "devDependencies": {
-    "@types/applicationinsights-js": "^1.0.5",
-    "concurrently": "^3.6.0",
-    "rimraf": "^2.6.2",
-    "standard-version": "^4.4.0",
-    "tslint": "^5.10.0",
-    "typescript": "^2.9.2"
+    "@types/applicationinsights-js": "^1.0.9",
+    "concurrently": "^4.1.0",
+    "rimraf": "^2.6.3",
+    "standard-version": "^5.0.2",
+    "tslint": "^5.14.0",
+    "typescript": "^3.3.4000"
   }
 }
