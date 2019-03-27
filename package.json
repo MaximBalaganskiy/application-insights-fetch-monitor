@@ -1,6 +1,6 @@
 {
   "name": "application-insights-fetch-monitor",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Fetch API monitor for Application Insights",
   "main": "dist/commonjs/index.js",
   "typings": "dist/commonjs/index.d.ts",
