@@ -1,3 +1,7 @@
+# WARNING! DEPRECATED!
+Please upgrade to [ApplicationInsights-JS](https://github.com/microsoft/ApplicationInsights-JS)@^2.0.0.
+It now has Fetch instrumentation which is based on the code of this package.
+
 # application-insights-fetch-monitor
 Fetch API monitor for Application Insights
 
